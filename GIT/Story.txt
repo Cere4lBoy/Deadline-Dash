@@ -7,9 +7,13 @@ DIA PERGI KELAS
 ADAM BISING
 ADAM LAPAR
 ADAM BOSAN
-
+Bye
 hi
+<<<<<<< HEAD
 
 DIA MANDI
 
 Then Y
+=======
+Then K
+>>>>>>> Di-Dalam-Kelas
