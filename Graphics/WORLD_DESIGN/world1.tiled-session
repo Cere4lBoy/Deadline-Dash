@@ -1,0 +1,39 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "New folder/W1.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "New folder/W1.tmx": {
+            "scale": 0.5,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 674,
+                "y": 393
+            }
+        },
+        "W1_FLOOR.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        }
+    },
+    "last.imagePath": "D:/MINI IT PROJECT/Graphics/WORLD_DESIGN",
+    "map.height": 24,
+    "map.lastUsedFormat": "tmx",
+    "map.width": 256,
+    "openFiles": [
+        "New folder/W1.tmx",
+        "W1_FLOOR.tsx"
+    ],
+    "project": "world1.tiled-project",
+    "recentFiles": [
+        "W1_FLOOR.tsx",
+        "New folder/W1.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx"
+}
