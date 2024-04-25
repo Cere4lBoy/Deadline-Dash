@@ -11,10 +11,11 @@ class Game:
        
         self.clock = pygame.time.Clock()
 
-        self.img = pygame.image.load('Graphics/MAIN MENU/PREVIEW.png')
+        self.img = pygame.image.load('Graphics\MAIN MENU\PREVIEW.png')
 
     def run(self):
         while True:
+             self.screen.blit(self.img, (1366, 768))
              for event in pygame.event.get():
                if event.type ==pygame.QUIT:
                     pygame.quit
