@@ -3,8 +3,9 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "New folder/W1.tmx",
+    "activeFile": "TMX/W1.tmx",
     "expandedProjectPaths": [
+        "TMX",
         "."
     ],
     "file.lastUsedOpenFilter": "All Files (*)",
@@ -17,6 +18,14 @@
                 "y": 393
             }
         },
+        "TMX/W1.tmx": {
+            "scale": 0.25,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 1580,
+                "y": 1520
+            }
+        },
         "W1_FLOOR.tsx": {
             "scaleInDock": 1,
             "scaleInEditor": 1
@@ -27,12 +36,13 @@
     "map.lastUsedFormat": "tmx",
     "map.width": 256,
     "openFiles": [
-        "New folder/W1.tmx",
-        "W1_FLOOR.tsx"
+        "W1_FLOOR.tsx",
+        "TMX/W1.tmx"
     ],
     "project": "world1.tiled-project",
     "recentFiles": [
         "W1_FLOOR.tsx",
+        "TMX/W1.tmx",
         "New folder/W1.tmx"
     ],
     "tileset.lastUsedFormat": "tsx"
