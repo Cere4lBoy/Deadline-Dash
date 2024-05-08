@@ -15,11 +15,14 @@ class Game:
         self.clock = pygame.time.Clock()
         self.movement = [False, False]
         
-        # Load menu assets
-        self.load_menu_assets()
+        # Load menu assets and capture returned values
+        logo_img, logo_width = self.load_menu_assets()
 
         self.player = PhysicsEntity(self, 'player', (50, 50), (15, 17))
         self.tilemap = Tilemap(self, tile_size=16)
+        # Storing logo_img and logo_width for later use
+        self.logo_img = logo_img
+        self.logo_width = logo_width
 
 
         self.assets = {
@@ -32,9 +35,19 @@ class Game:
 
         
     def load_menu_assets(self):
+        # B.L.O.A.T (Best Logo Of All Time)
+        logo_img = pygame.image.load('data/images/DEADLINEDASHLOGO.png').convert_alpha()
+        logo_width = int(logo_img.get_width() * 1.0)  # Scale logo width to 50%
+        logo_height = int(logo_img.get_height() * 1.0)  # Scale logo height to 50%
+        logo_img = pygame.transform.scale(logo_img, (logo_width, logo_height))
+
+
         # Load button images
         start_img = pygame.image.load('data/images/menubuttons/START.png').convert_alpha()
         exit_img = pygame.image.load('data/images/menubuttons/EXIT.png').convert_alpha()
+        leaderb_img = pygame.image.load('data/images/menubuttons/LEADERBOARD.png').convert_alpha()
+        credits_img = pygame.image.load('data/images/menubuttons/CREDITS.png').convert_alpha()
+        
 
         # Background Image
         self.background_img = pygame.image.load('data/images/MENUBG.png').convert()
@@ -43,17 +56,24 @@ class Game:
         # Button objects
         self.start_button = Button(550, 450, start_img, 0.7)
         self.exit_button = Button(700, 650, exit_img, 0.5)
+        self.leaderb_button = Button(550, 550, leaderb_img, 0.7)
+        self.credits_button = Button(470, 650, credits_img, 0.5)
+
+        return logo_img, logo_width
 
     def draw_menu(self):
-        # Blit background image
         self.screen.blit(self.background_img, (0, 0))
-
+        self.screen.blit(self.logo_img, ((self.screen.get_width() - self.logo_width) // 2, 50))  # Adjust Y position as needed
 
         # Draw buttons and handle actions
         if self.start_button.draw(self.screen):
             self.start_game()
         if self.exit_button.draw(self.screen):
             pygame.quit()  # Quit the game
+        if self.leaderb_button.draw(self.screen):
+            pygame.quit()
+        if self.credits_button.draw(self.screen):
+            pygame.quit()
 
         pygame.display.update()
 
