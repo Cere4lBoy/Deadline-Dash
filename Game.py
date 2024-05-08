@@ -20,6 +20,16 @@ class Game:
 
         self.player = PhysicsEntity(self, 'player', (50, 50), (15, 17))
         self.tilemap = Tilemap(self, tile_size=16)
+
+
+        self.assets = {
+            'decor': load_images('tiles/decor'),
+            'grass': load_images('tiles/grass'),
+            'large_decor': load_images('tiles/large_decor'),
+            'stone': load_images('tiles/stone'),
+            'player': load_image('entities/player.png')
+        }
+
         
     def load_menu_assets(self):
         # Load button images
