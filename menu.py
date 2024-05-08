@@ -1,6 +1,6 @@
 import pygame
 from button import Button  # Import the Button class from button.py
-from game import Game  # Import the Game class from game.py
+from Game import Game  # Import the Game class from game.py
 
 # Display window
 SCREEN_HEIGHT = 768
