@@ -3,7 +3,7 @@ import pygame
 from scripts.utils import load_image, load_images
 from scripts.entities import PhysicsEntity
 from scripts.tilemap import Tilemap
-from button import Button  # Import the Button class from button.py
+from button import Button
 
 class Game:
     def __init__(self):
