@@ -20,7 +20,7 @@ class Game:
 
         self.player = PhysicsEntity(self, 'player', (50, 50), (15, 17))
         self.tilemap = Tilemap(self, tile_size=16)
-        # Storing logo_img and logo_width for later use
+        # Storing logo_img and logo_width
         self.logo_img = logo_img
         self.logo_width = logo_width
 
