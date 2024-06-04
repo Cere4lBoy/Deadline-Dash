@@ -9,6 +9,7 @@ from button import Button
 from scripts.clouds import Clouds
 from scripts.particle import Particle
 from scripts.spark import Spark
+from scripts.pyvidplayer import Video
 
 def scale_image(image, scale_factor):
     width = int(image.get_width() * scale_factor)
@@ -61,6 +62,10 @@ class Game:
 
         self.load_level(0)
 
+        self.vid = Video('data/group7intro.mp4')
+        self.vid.set_size((1366, 768))
+        self.video_playing = True
+
     def load_menu_assets(self):
         # B.L.O.A.T (Best Logo Of All Time)
         logo_img = pygame.image.load('data/images/DEADLINEDASHLOGO.png').convert_alpha()
@@ -104,16 +109,20 @@ class Game:
 
     def start_game(self):
         self.menu_running = False
+        self.start_game = False
 
     def run_menu(self):
-        self.menu_running = True
-        while self.menu_running:
+        while True:
+            self.screen.fill((0, 0, 0))
             self.draw_menu()
+            pygame.display.update()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-            pygame.display.update()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    self.menu_running = True
+
 
     def load_level(self, map_id):
         self.tilemap.load('data/maps/' + str(map_id) + '.json')
@@ -140,8 +149,29 @@ class Game:
         if 0 <= enemy_index < len(self.enemies):
             self.enemies[enemy_index].pos = new_position
 
+    def play_intro_video(self):
+        self.vid.restart()  # Ensure the video starts from the beginning
+        while self.vid.active:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        self.vid.active = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:  # Left mouse button
+                        self.vid.active = False
+
+            self.screen.fill((0, 0, 0))
+            self.vid.draw(self.screen, (0, 0))
+            pygame.display.update()
+            self.clock.tick(60)
+
     def run(self):
+        self.play_intro_video()  # Play the video once at the start
         self.run_menu()  # Run the menu
+    def run_game(self):
         while True:
             self.display.blit(self.assets['background'], (0, 0))
 
@@ -165,20 +195,19 @@ class Game:
             self.tilemap.render(self.display, offset=render_scroll)
 
             for enemy in self.enemies.copy():
-                kill = enemy.update(self.tilemap, (0, 0))
+                kill = enemy.update(self.tilemap)  # Removed movement argument
                 enemy.render(self.display, offset=render_scroll)
                 if kill:
                     self.enemies.remove(enemy)
 
             if not self.dead:
-                self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
-                self.player.render(self.display, offset=render_scroll)
-
-            # [[x, y], direction, timer]
+                self.player.update(self.tilemap)  # Removed movement argument
+                self.player.render(self.display, offset=render_scroll, timer=self.dead)
             for projectile in self.projectiles.copy():
-                projectile[0][0] += projectile[1]
-                projectile[2] += 1
                 img = self.assets['projectile']
+                projectile[0][0] += math.cos(projectile[1]) * 8
+                projectile[0][1] += math.sin(projectile[1]) * 8
+                projectile[2] += 1
                 self.display.blit(img, (projectile[0][0] - img.get_width() / 2 - render_scroll[0], projectile[0][1] - img.get_height() / 2 - render_scroll[1]))
                 if self.tilemap.solid_check(projectile[0]):
                     self.projectiles.remove(projectile)
@@ -194,9 +223,7 @@ class Game:
                             angle = random.random() * math.pi * 2
                             speed = random.random() * 5
                             self.sparks.append(Spark(self.player.rect().center, angle, 2 + random.random()))
-                            self.particles.append(Particle(self, 'particle', self.player.rect().center, velocity=[math.cos(angle + math.pi) * speed * 0.5, math.sin(angle + math
-
-.pi) * speed * 0.5], frame=random.randint(0, 7)))
+                            self.particles.append(Particle(self, 'particle', self.player.rect().center, velocity=[math.cos(angle + math.pi) * speed * 0.5, math.sin(angle + math.pi) * speed * 0.5], frame=random.randint(0, 7)))
 
             for spark in self.sparks.copy():
                 kill = spark.update()
@@ -234,15 +261,4 @@ class Game:
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
             pygame.display.update()
             self.clock.tick(60)
-
 Game().run()
-
-# Example usage:
-# After loading the level
-game = Game()
-game.run()
-
-# Adjust enemy position dynamically
-new_position = (100, 150)  # New x, y coordinates for the enemy
-game.adjust_enemy_position(0, new_position)  # Adjust the position of the first enemy
-
