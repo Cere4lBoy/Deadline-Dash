@@ -17,8 +17,8 @@ class Game:
 
         pygame.display.set_caption('Deadline Dash')
         self.screen = pygame.display.set_mode((1366, 768))
-        self.display = pygame.Surface((320, 240), pygame.SRCALPHA)
-        self.display_2 = pygame.Surface((320, 240))
+        self.display = pygame.Surface((1366, 768), pygame.SRCALPHA)
+        self.display_2 = pygame.Surface((1366, 768))
 
         self.clock = pygame.time.Clock()
         
@@ -61,7 +61,7 @@ class Game:
         
         self.clouds = Clouds(self.assets['clouds'], count=16)
         
-        self.player = Player(self, (50, 50), (19, 33))
+        self.player = Player(self, (50, 50), (14, 18))
         
         self.tilemap = Tilemap(self, tile_size=16)
         
