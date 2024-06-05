@@ -37,7 +37,6 @@ class Video:
     def get_playback_data(self):
         return {"active":self.active,
                 "time":self.video.get_pts(),
-                "volume":self.video.get_volume(),
                 "paused":self.video.get_pause(),
                 "size":self.size}
         
@@ -53,9 +52,6 @@ class Video:
     def set_size(self, size):
         self.video.set_size(size[0], size[1])
         self.size = size
-    
-    def set_volume(self, volume):
-        self.video.set_volume(volume)
     
     def seek(self, seek_time, accurate=False):
         vid_time = self.video.get_pts()
