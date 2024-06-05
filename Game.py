@@ -96,7 +96,7 @@ class Game:
 
         # Draw buttons and handle actions
         if self.start_button.draw(self.screen):
-            self.start_game()
+            self.run_game()
         if self.exit_button.draw(self.screen):
             pygame.quit()
             sys.exit()
@@ -109,7 +109,6 @@ class Game:
 
     def start_game(self):
         self.menu_running = False
-        self.start_game = False
 
     def run_menu(self):
         while True:
@@ -200,9 +199,17 @@ class Game:
                 if kill:
                     self.enemies.remove(enemy)
 
+            movement = [0, 0]  # Initialize movement
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT]:
+                movement[0] -= 2  # Adjust movement speed as needed
+            if keys[pygame.K_RIGHT]:
+                movement[0] += 2  # Adjust movement speed as needed
+
             if not self.dead:
-                self.player.update(self.tilemap)  # Removed movement argument
+                self.player.update(self.tilemap, movement=movement)
                 self.player.render(self.display, offset=render_scroll, timer=self.dead)
+
             for projectile in self.projectiles.copy():
                 img = self.assets['projectile']
                 projectile[0][0] += math.cos(projectile[1]) * 8
