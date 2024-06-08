@@ -17,8 +17,8 @@ class Game:
 
         pygame.display.set_caption('Deadline Dash')
         self.screen = pygame.display.set_mode((1366, 768))
-        self.display = pygame.Surface((1366, 768), pygame.SRCALPHA)
-        self.display_2 = pygame.Surface((1366, 768))
+        self.display = pygame.Surface((320, 240), pygame.SRCALPHA)
+        self.display_2 = pygame.Surface((320, 240))
 
         self.clock = pygame.time.Clock()
         
@@ -61,7 +61,7 @@ class Game:
         
         self.clouds = Clouds(self.assets['clouds'], count=16)
         
-        self.player = Player(self, (50, 50), (14, 18))
+        self.player = Player(self, (50, 50), (8, 15))
         
         self.tilemap = Tilemap(self, tile_size=16)
         
@@ -84,9 +84,11 @@ class Game:
         for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
             if spawner['variant'] == 0:
                 self.player.pos = spawner['pos']
-                self.player.air_time = 0
+                self.player.air_time = 3
             else:
-                self.enemies.append(Enemy(self, spawner['pos'], (8, 15)))
+                # Adjust the y-coordinate to ensure enemies spawn on top of the ground
+                enemy_y = spawner['pos'][1] - 500  # Adjust this value according to your enemy's height
+                self.enemies.append(Enemy(self, (spawner['pos'][0], enemy_y), (8, 15)))
             
         self.projectiles = []
         self.particles = []
