@@ -43,6 +43,7 @@ class Game:
             'particle/particle': Animation(load_images('particles/particle'), img_dur=6, loop=False),
             'gun': load_image('gun.png'),
             'projectile': load_image('projectile.png'),
+            'tutorial': load_image('tutorial.png'),
         }
         
         self.sfx = {
@@ -72,6 +73,10 @@ class Game:
 
         self.vid = Video('data/group7intro.mp4')
         self.vid.set_size((1366, 768))
+
+        self.tutorial_display_start_time = None  # Initialize a variable to track tutorial display start time
+        self.show_tutorial = False  # Flag to control tutorial display
+        self.fade_alpha = 255
         
     def load_level(self, map_id):
         self.tilemap.load('data/maps/' + str(map_id) + '.json')
@@ -97,6 +102,11 @@ class Game:
         self.scroll = [0, 0]
         self.dead = 0
         self.transition = -30
+
+        if map_id == 0:
+            self.tutorial_display_start_time = pygame.time.get_ticks()  # Start the timer
+            self.show_tutorial = True
+            self.fade_alpha = 255
 
     def play_intro_video(self):
         self.vid.restart()  # Ensure the video starts from the beginning
@@ -178,8 +188,8 @@ class Game:
                 if self.tilemap.solid_check(projectile[0]):
                     self.projectiles.remove(projectile)
                     for i in range(4):
-                        self.sparks.append(Spark(projectile[0], random.random() - 0.5 + (math.pi if projectile[1] > 0 else 0), 2 + random.random()))
-                elif projectile[2] > 360:
+                        self.sparks.append(Spark(projectile[0], random.random() * math.pi * 2, 2 + random.random()))
+                elif projectile[2] > 60:
                     self.projectiles.remove(projectile)
                 elif abs(self.player.dashing) < 50:
                     if self.player.rect().collidepoint(projectile[0]):
@@ -211,7 +221,26 @@ class Game:
                     particle.pos[0] += math.sin(particle.animation.frame * 0.035) * 0.3
                 if kill:
                     self.particles.remove(particle)
-            
+
+            # Display tutorial image if level is 0 and show_tutorial is True
+            if self.level == 0 and self.show_tutorial:
+                current_time = pygame.time.get_ticks()
+                elapsed_time = current_time - self.tutorial_display_start_time
+                fade_duration = 5000  # Duration to fade out the tutorial image in milliseconds
+                
+                if elapsed_time > fade_duration:
+                    self.fade_alpha = max(0, self.fade_alpha - 5)  # Fade out tutorial image
+                    self.assets['tutorial'].set_alpha(self.fade_alpha)
+                else:
+                    self.assets['tutorial'].set_alpha(255)  # Ensure full opacity initially
+                
+                self.display.blit(self.assets['tutorial'], ((self.display.get_width() - self.assets['tutorial'].get_width()) // 2, (self.display.get_height() - self.assets['tutorial'].get_height()) // 2))
+                
+                if self.fade_alpha == 0:
+                    self.show_tutorial = False  # Stop showing tutorial after fade-out
+                
+                print(f"Current Time: {current_time}, Display Start Time: {self.tutorial_display_start_time}, Fade Alpha: {self.fade_alpha}")
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -244,6 +273,5 @@ class Game:
             self.screen.blit(pygame.transform.scale(self.display_2, self.screen.get_size()), screenshake_offset)
             pygame.display.update()
             self.clock.tick(60)
-
 
 Game().run()
