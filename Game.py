@@ -3,13 +3,13 @@ import sys
 import math
 import random
 import pygame
-from scripts.utils import load_image, load_images, Animation
-from scripts.entities import PhysicsEntity, Player, Enemy
-from scripts.tilemap import Tilemap
-from scripts.clouds import Clouds
-from scripts.particle import Particle
-from scripts.spark import Spark
-from scripts.pyvidplayer import Video  # Ensure you have this module
+from Scripts.utils import load_image, load_images, Animation
+from Scripts.entities import PhysicsEntity, Player, Enemy
+from Scripts.tilemap import Tilemap
+from Scripts.clouds import Clouds
+from Scripts.particle import Particle
+from Scripts.spark import Spark
+from Scripts.pyvidplayer import Video  # Ensure you have this module
 
 class Game:
     def __init__(self):
