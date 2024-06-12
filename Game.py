@@ -11,6 +11,73 @@ from Scripts.particle import Particle
 from Scripts.spark import Spark
 from Scripts.pyvidplayer import Video  # Ensure you have this module
 
+#Pause menu assets
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+BUTTON_COLOR = (0, 200, 0)
+BUTTON_HOVER_COLOR = (0, 255, 0)
+BUTTON_TEXT_COLOR = (255, 255, 255)
+resume_button = pygame.Surface((200, 50))
+quit_button = pygame.Surface((200, 50))
+resume_button.fill(BUTTON_COLOR)
+quit_button.fill(BUTTON_COLOR)
+
+def draw_text(text, font, color, surface, x, y):
+    textobj = font.render(text, True, color)
+    textrect = textobj.get_rect()
+    textrect.topleft = (x, y)
+    surface.blit(textobj, textrect)
+
+
+def pause_menu(screen, clock):
+    paused = True
+    font = pygame.font.SysFont(None, 55)
+    
+    while paused:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    paused = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                if resume_button_rect.collidepoint(mouse_pos):
+                    paused = False
+                if quit_button_rect.collidepoint(mouse_pos):
+                    pygame.quit()
+                    sys.exit()
+        
+        screen.fill(WHITE)
+        
+        # Button positions
+        resume_button_rect = resume_button.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
+        quit_button_rect = quit_button.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50))
+        
+        # Check for mouse hover
+        mouse_pos = pygame.mouse.get_pos()
+        if resume_button_rect.collidepoint(mouse_pos):
+            resume_button.fill(BUTTON_HOVER_COLOR)
+        else:
+            resume_button.fill(BUTTON_COLOR)
+        
+        if quit_button_rect.collidepoint(mouse_pos):
+            quit_button.fill(BUTTON_HOVER_COLOR)
+        else:
+            quit_button.fill(BUTTON_COLOR)
+        
+        # Draw buttons
+        screen.blit(resume_button, resume_button_rect.topleft)
+        screen.blit(quit_button, quit_button_rect.topleft)
+        
+        # Draw button text
+        draw_text("Resume", font, BUTTON_TEXT_COLOR, screen, resume_button_rect.x + 50, resume_button_rect.y + 10)
+        draw_text("Quit", font, BUTTON_TEXT_COLOR, screen, quit_button_rect.x + 75, quit_button_rect.y + 10)
+        
+        pygame.display.update()
+        clock.tick(60)
+
 class Game:
     def __init__(self):
         pygame.init()
@@ -226,6 +293,8 @@ class Game:
                             self.sfx['jump'].play()
                     if event.key == pygame.K_x:
                         self.player.dash()
+                    if event.key == pygame.K_ESCAPE:
+                        pause_menu(self.screen, self.clock)
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_LEFT:
                         self.movement[0] = False
