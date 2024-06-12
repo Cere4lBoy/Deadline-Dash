@@ -3,20 +3,50 @@ import sys
 import math
 import random
 import pygame
-from scripts.utils import load_image, load_images, Animation
-from scripts.entities import PhysicsEntity, Player, Enemy
-from scripts.tilemap import Tilemap
-from scripts.clouds import Clouds
-from scripts.particle import Particle
-from scripts.spark import Spark
-from scripts.pyvidplayer import Video  # Ensure you have this module
+from Scripts.utils import load_image, load_images, Animation
+from Scripts.entities import PhysicsEntity, Player, Enemy
+from Scripts.tilemap import Tilemap
+from Scripts.clouds import Clouds
+from Scripts.particle import Particle
+from Scripts.spark import Spark
+from Scripts.pyvidplayer import Video  # Ensure you have this module
+
+#Pause menu assets
+WHITE = (255, 255, 255, 128)
+BLACK = (0, 0, 0)
+BUTTON_COLOR = (0, 200, 0)
+BUTTON_HOVER_COLOR = (0, 255, 0)
+BUTTON_TEXT_COLOR = (255, 255, 255)
+resume_button = pygame.Surface((200, 50))
+quit_button = pygame.Surface((200, 50))
+resume_button.fill(BUTTON_COLOR)
+quit_button.fill(BUTTON_COLOR)
+
+pygame.init()
+pygame.display.set_caption('Deadline Dash')
+screen = pygame.display.set_mode((1366, 768))
+resume_button_img = pygame.image.load('data/images/resumebutton.png').convert_alpha()
+quit_button_img = pygame.image.load('data/images/quitbutton.png').convert_alpha()
+clock = pygame.time.Clock()
+
+resume_button_img = pygame.transform.scale(resume_button_img, (200, 100))
+quit_button_img = pygame.transform.scale(quit_button_img, (200, 100))
+
+def draw_text(text, font, color, surface, x, y):
+        textobj = font.render(text, True, color)
+        textrect = textobj.get_rect()
+        textrect.topleft = (x, y)
+        surface.blit(textobj, textrect)
+
 
 class Game:
     def __init__(self):
-        pygame.init()
-
-        pygame.display.set_caption('Deadline Dash')
-        self.screen = pygame.display.set_mode((1366, 768))
+        
+        self.pause_button_img = pygame.image.load('data/images/pausebutton.png').convert_alpha()
+        self.pause_button_img = pygame.transform.scale(self.pause_button_img, (70, 70))
+        self.pause_button_rect = self.pause_button_img.get_rect(topleft=(20, 10))
+        
+        self.screen = screen
         self.display = pygame.Surface((320, 240), pygame.SRCALPHA)
         self.display_2 = pygame.Surface((320, 240))
 
@@ -77,6 +107,43 @@ class Game:
         self.tutorial_display_start_time = None  # Initialize a variable to track tutorial display start time
         self.show_tutorial = False  # Flag to control tutorial display
         self.fade_alpha = 255
+
+    def pause_menu(self, screen, clock):
+        paused = True
+        font = pygame.font.SysFont(None, 55)
+
+        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 20)) 
+
+        resume_button_img = pygame.transform.scale(pygame.image.load('data/images/resumebutton.png').convert_alpha(), (200, 100))
+        quit_button_img = pygame.transform.scale(pygame.image.load('data/images/quitbutton.png').convert_alpha(), (200, 100))
+        resume_button_rect = resume_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
+        quit_button_rect = quit_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50))
+
+        while paused:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        paused = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = event.pos
+                    if resume_button_rect.collidepoint(mouse_pos):
+                        paused = False
+                    if quit_button_rect.collidepoint(mouse_pos):
+                        pygame.quit()
+                        sys.exit()
+
+            screen.blit(overlay, (0, 0))
+
+            # Draw buttons
+            screen.blit(resume_button_img, resume_button_rect.topleft)
+            screen.blit(quit_button_img, quit_button_rect.topleft)
+
+            pygame.display.update()
+            clock.tick(60)
         
     def load_level(self, map_id):
         self.tilemap.load('data/maps/' + str(map_id) + '.json')
@@ -122,9 +189,11 @@ class Game:
             self.vid.draw(self.screen, (0, 0))
             pygame.display.update()
             self.clock.tick(60)
-        self.vid.close() 
+        self.vid.close()
+    
+    
         
-    def run(self):
+    def run(self, clock):
         self.play_intro_video()  # Play the video once at the start
 
         pygame.mixer.music.load('data/music.wav')
@@ -243,35 +312,44 @@ class Game:
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
+                   pygame.quit()
+                   sys.exit()
+                if event.type == pygame.KEYDOWN:
+                   if event.key == pygame.K_ESCAPE:
+                      self.pause_menu(self.screen, self.clock)
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LEFT:
                         self.movement[0] = True
                     if event.key == pygame.K_RIGHT:
-                        self.movement[1] = True
+                       self.movement[1] = True
                     if event.key == pygame.K_UP:
-                        if self.player.jump():
-                            self.sfx['jump'].play()
+                      if self.player.jump():
+                         self.sfx['jump'].play()
                     if event.key == pygame.K_x:
                         self.player.dash()
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_LEFT:
-                        self.movement[0] = False
+                       self.movement[0] = False
                     if event.key == pygame.K_RIGHT:
-                        self.movement[1] = False
-                        
+                       self.movement[1] = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.pause_button_rect.collidepoint(event.pos):
+                      self.pause_menu(screen, clock)
+
             if self.transition:
-                transition_surf = pygame.Surface(self.display.get_size())
-                pygame.draw.circle(transition_surf, (255, 255, 255), (self.display.get_width() // 2, self.display.get_height() // 2), (30 - abs(self.transition)) * 8)
-                transition_surf.set_colorkey((255, 255, 255))
-                self.display.blit(transition_surf, (0, 0))
-                
+             transition_surf = pygame.Surface(self.display.get_size())
+             pygame.draw.circle(transition_surf, (255, 255, 255), (self.display.get_width() // 2, self.display.get_height() // 2), (30 - abs(self.transition)) * 8)
+             transition_surf.set_colorkey((255, 255, 255))
+            self.display.blit(transition_surf, (0, 0))
+
             self.display_2.blit(self.display, (0, 0))
-            
+  
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2, random.random() * self.screenshake - self.screenshake / 2)
             self.screen.blit(pygame.transform.scale(self.display_2, self.screen.get_size()), screenshake_offset)
+            screen.blit(self.pause_button_img, self.pause_button_rect.topleft)
+                 
             pygame.display.update()
             self.clock.tick(60)
+
 
 Game().run()

@@ -3,8 +3,8 @@ import random
 
 import pygame
 
-from scripts.particle import Particle
-from scripts.spark import Spark
+from Scripts.particle import Particle
+from Scripts.spark import Spark
 
 class PhysicsEntity:
     def __init__(self, game, e_type, pos, size):
