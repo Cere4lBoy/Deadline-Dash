@@ -22,16 +22,28 @@ quit_button = pygame.Surface((200, 50))
 resume_button.fill(BUTTON_COLOR)
 quit_button.fill(BUTTON_COLOR)
 
-def draw_text(text, font, color, surface, x, y):
-    textobj = font.render(text, True, color)
-    textrect = textobj.get_rect()
-    textrect.topleft = (x, y)
-    surface.blit(textobj, textrect)
+pygame.init()
+pygame.display.set_caption('Deadline Dash')
+screen = pygame.display.set_mode((1366, 768))
+resume_button_img = pygame.image.load('data/images/resumebutton.png').convert_alpha()
+quit_button_img = pygame.image.load('data/images/quitbutton.png').convert_alpha()
 
+resume_button_img = pygame.transform.scale(resume_button_img, (200, 100))
+quit_button_img = pygame.transform.scale(quit_button_img, (200, 100))
+
+def draw_text(text, font, color, surface, x, y):
+        textobj = font.render(text, True, color)
+        textrect = textobj.get_rect()
+        textrect.topleft = (x, y)
+        surface.blit(textobj, textrect)
 
 def pause_menu(screen, clock):
     paused = True
     font = pygame.font.SysFont(None, 55)
+    
+    # Button positions
+    resume_button_rect = resume_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
+    quit_button_rect = quit_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50))
     
     while paused:
         for event in pygame.event.get():
@@ -51,39 +63,20 @@ def pause_menu(screen, clock):
         
         screen.fill(WHITE)
         
-        # Button positions
-        resume_button_rect = resume_button.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
-        quit_button_rect = quit_button.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50))
-        
-        # Check for mouse hover
-        mouse_pos = pygame.mouse.get_pos()
-        if resume_button_rect.collidepoint(mouse_pos):
-            resume_button.fill(BUTTON_HOVER_COLOR)
-        else:
-            resume_button.fill(BUTTON_COLOR)
-        
-        if quit_button_rect.collidepoint(mouse_pos):
-            quit_button.fill(BUTTON_HOVER_COLOR)
-        else:
-            quit_button.fill(BUTTON_COLOR)
-        
         # Draw buttons
-        screen.blit(resume_button, resume_button_rect.topleft)
-        screen.blit(quit_button, quit_button_rect.topleft)
-        
-        # Draw button text
-        draw_text("Resume", font, BUTTON_TEXT_COLOR, screen, resume_button_rect.x + 50, resume_button_rect.y + 10)
-        draw_text("Quit", font, BUTTON_TEXT_COLOR, screen, quit_button_rect.x + 75, quit_button_rect.y + 10)
+        screen.blit(resume_button_img, resume_button_rect.topleft)
+        screen.blit(quit_button_img, quit_button_rect.topleft)
         
         pygame.display.update()
         clock.tick(60)
+    
 
 class Game:
     def __init__(self):
-        pygame.init()
+        
 
-        pygame.display.set_caption('Deadline Dash')
-        self.screen = pygame.display.set_mode((1366, 768))
+        
+        self.screen = screen
         self.display = pygame.Surface((320, 240), pygame.SRCALPHA)
         self.display_2 = pygame.Surface((320, 240))
 
@@ -314,5 +307,6 @@ class Game:
             pygame.display.update()
             self.clock.tick(60)
 
+    
 
 Game().run()
