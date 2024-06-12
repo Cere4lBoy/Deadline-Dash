@@ -12,7 +12,7 @@ from Scripts.spark import Spark
 from Scripts.pyvidplayer import Video  # Ensure you have this module
 
 #Pause menu assets
-WHITE = (255, 255, 255)
+WHITE = (255, 255, 255, 128)
 BLACK = (0, 0, 0)
 BUTTON_COLOR = (0, 200, 0)
 BUTTON_HOVER_COLOR = (0, 255, 0)
@@ -38,40 +38,6 @@ def draw_text(text, font, color, surface, x, y):
         textrect.topleft = (x, y)
         surface.blit(textobj, textrect)
 
-def pause_menu(screen, clock):
-    paused = True
-    font = pygame.font.SysFont(None, 55)
-    
-    # Button positions
-    resume_button_rect = resume_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
-    quit_button_rect = quit_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50))
-    
-    while paused:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    paused = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = event.pos
-                if resume_button_rect.collidepoint(mouse_pos):
-                    paused = False
-                if quit_button_rect.collidepoint(mouse_pos):
-                    pygame.quit()
-                    sys.exit()
-        
-        screen.fill(WHITE)
-        
-        # Draw buttons
-        screen.blit(resume_button_img, resume_button_rect.topleft)
-        screen.blit(quit_button_img, quit_button_rect.topleft)
-        
-        pygame.display.update()
-        clock.tick(60)
-        
-    
 
 class Game:
     def __init__(self):
@@ -140,6 +106,10 @@ class Game:
     def pause_menu(self, screen, clock):
         paused = True
         font = pygame.font.SysFont(None, 55)
+
+        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 20)) 
+
         resume_button_img = pygame.transform.scale(pygame.image.load('data/images/resumebutton.png').convert_alpha(), (200, 100))
         quit_button_img = pygame.transform.scale(pygame.image.load('data/images/quitbutton.png').convert_alpha(), (200, 100))
         resume_button_rect = resume_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
@@ -161,7 +131,7 @@ class Game:
                         pygame.quit()
                         sys.exit()
 
-            screen.fill(WHITE)
+            screen.blit(overlay, (0, 0))
 
             # Draw buttons
             screen.blit(resume_button_img, resume_button_rect.topleft)
@@ -347,7 +317,8 @@ class Game:
   
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2, random.random() * self.screenshake - self.screenshake / 2)
             self.screen.blit(pygame.transform.scale(self.display_2, self.screen.get_size()), screenshake_offset)
-            screen.blit(self.pause_button_img, self.pause_button_rect.topleft)  # Move this line here
+            screen.blit(self.pause_button_img, self.pause_button_rect.topleft)
+                 
             pygame.display.update()
             self.clock.tick(60)
 
