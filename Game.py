@@ -27,6 +27,7 @@ pygame.display.set_caption('Deadline Dash')
 screen = pygame.display.set_mode((1366, 768))
 resume_button_img = pygame.image.load('data/images/resumebutton.png').convert_alpha()
 quit_button_img = pygame.image.load('data/images/quitbutton.png').convert_alpha()
+clock = pygame.time.Clock()
 
 resume_button_img = pygame.transform.scale(resume_button_img, (200, 100))
 quit_button_img = pygame.transform.scale(quit_button_img, (200, 100))
@@ -69,12 +70,15 @@ def pause_menu(screen, clock):
         
         pygame.display.update()
         clock.tick(60)
+        
     
 
 class Game:
     def __init__(self):
         
-
+        self.pause_button_img = pygame.image.load('data/images/pausebutton.png').convert_alpha()
+        self.pause_button_img = pygame.transform.scale(self.pause_button_img, (70, 70))
+        self.pause_button_rect = self.pause_button_img.get_rect(topleft=(20, 10))
         
         self.screen = screen
         self.display = pygame.Surface((320, 240), pygame.SRCALPHA)
@@ -132,6 +136,39 @@ class Game:
 
         self.vid = Video('data/group7intro.mp4')
         self.vid.set_size((1366, 768))
+
+    def pause_menu(self, screen, clock):
+        paused = True
+        font = pygame.font.SysFont(None, 55)
+        resume_button_img = pygame.transform.scale(pygame.image.load('data/images/resumebutton.png').convert_alpha(), (200, 100))
+        quit_button_img = pygame.transform.scale(pygame.image.load('data/images/quitbutton.png').convert_alpha(), (200, 100))
+        resume_button_rect = resume_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
+        quit_button_rect = quit_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50))
+
+        while paused:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        paused = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = event.pos
+                    if resume_button_rect.collidepoint(mouse_pos):
+                        paused = False
+                    if quit_button_rect.collidepoint(mouse_pos):
+                        pygame.quit()
+                        sys.exit()
+
+            screen.fill(WHITE)
+
+            # Draw buttons
+            screen.blit(resume_button_img, resume_button_rect.topleft)
+            screen.blit(quit_button_img, quit_button_rect.topleft)
+
+            pygame.display.update()
+            clock.tick(60)
         
     def load_level(self, map_id):
         self.tilemap.load('data/maps/' + str(map_id) + '.json')
@@ -172,9 +209,11 @@ class Game:
             self.vid.draw(self.screen, (0, 0))
             pygame.display.update()
             self.clock.tick(60)
-        self.vid.close() 
+        self.vid.close()
+    
+    
         
-    def run(self):
+    def run(self, clock):
         self.play_intro_video()  # Play the video once at the start
 
         pygame.mixer.music.load('data/music.wav')
@@ -274,39 +313,45 @@ class Game:
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
+                   pygame.quit()
+                   sys.exit()
+                if event.type == pygame.KEYDOWN:
+                   if event.key == pygame.K_ESCAPE:
+                      self.pause_menu(self.screen, self.clock)
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LEFT:
                         self.movement[0] = True
                     if event.key == pygame.K_RIGHT:
-                        self.movement[1] = True
+                       self.movement[1] = True
                     if event.key == pygame.K_UP:
-                        if self.player.jump():
-                            self.sfx['jump'].play()
+                      if self.player.jump():
+                         self.sfx['jump'].play()
                     if event.key == pygame.K_x:
                         self.player.dash()
-                    if event.key == pygame.K_ESCAPE:
-                        pause_menu(self.screen, self.clock)
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_LEFT:
-                        self.movement[0] = False
+                       self.movement[0] = False
                     if event.key == pygame.K_RIGHT:
-                        self.movement[1] = False
-                        
+                       self.movement[1] = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.pause_button_rect.collidepoint(event.pos):
+                      self.pause_menu(screen, clock)
+
             if self.transition:
-                transition_surf = pygame.Surface(self.display.get_size())
-                pygame.draw.circle(transition_surf, (255, 255, 255), (self.display.get_width() // 2, self.display.get_height() // 2), (30 - abs(self.transition)) * 8)
-                transition_surf.set_colorkey((255, 255, 255))
-                self.display.blit(transition_surf, (0, 0))
-                
+             transition_surf = pygame.Surface(self.display.get_size())
+             pygame.draw.circle(transition_surf, (255, 255, 255), (self.display.get_width() // 2, self.display.get_height() // 2), (30 - abs(self.transition)) * 8)
+             transition_surf.set_colorkey((255, 255, 255))
+            self.display.blit(transition_surf, (0, 0))
+
             self.display_2.blit(self.display, (0, 0))
-            
+  
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2, random.random() * self.screenshake - self.screenshake / 2)
             self.screen.blit(pygame.transform.scale(self.display_2, self.screen.get_size()), screenshake_offset)
+            screen.blit(self.pause_button_img, self.pause_button_rect.topleft)  # Move this line here
             pygame.display.update()
             self.clock.tick(60)
 
+
     
 
-Game().run()
+Game().run(clock)
