@@ -9,9 +9,9 @@ from Scripts.tilemap import Tilemap
 from Scripts.clouds import Clouds
 from Scripts.particle import Particle
 from Scripts.spark import Spark
-from Scripts.pyvidplayer import Video  # Ensure you have this module
+from Scripts.pyvidplayer import Video
 
-#Pause menu assets
+# Pause menu assets
 WHITE = (255, 255, 255, 128)
 BLACK = (0, 0, 0)
 BUTTON_COLOR = (0, 200, 0)
@@ -25,8 +25,8 @@ quit_button.fill(BUTTON_COLOR)
 pygame.init()
 pygame.display.set_caption('Deadline Dash')
 screen = pygame.display.set_mode((1366, 768))
-resume_button_img = pygame.image.load('data/images/resumebutton.png').convert_alpha()
-quit_button_img = pygame.image.load('data/images/quitbutton.png').convert_alpha()
+resume_button_img = pygame.image.load('data/images/pause_buttons/resumebutton.png').convert_alpha()
+quit_button_img = pygame.image.load('data/images/pause_buttons/quitbutton.png').convert_alpha()
 clock = pygame.time.Clock()
 
 resume_button_img = pygame.transform.scale(resume_button_img, (200, 100))
@@ -41,8 +41,7 @@ def draw_text(text, font, color, surface, x, y):
 
 class Game:
     def __init__(self):
-        
-        self.pause_button_img = pygame.image.load('data/images/pausebutton.png').convert_alpha()
+        self.pause_button_img = pygame.image.load('data/images/pause_buttons/pausebutton.png').convert_alpha()
         self.pause_button_img = pygame.transform.scale(self.pause_button_img, (70, 70))
         self.pause_button_rect = self.pause_button_img.get_rect(topleft=(20, 10))
         
@@ -103,6 +102,13 @@ class Game:
         self.vid = Video('data/group7intro.mp4')
         self.vid.set_size((1366, 768))
 
+        # Load tutorial images
+        self.tutorial_images = [
+            pygame.image.load('data/images/tutorial1.png').convert_alpha(),
+            pygame.image.load('data/images/tutorial2.png').convert_alpha(),
+            pygame.image.load('data/images/tutorial3.png').convert_alpha()
+        ]
+
     def pause_menu(self, screen, clock):
         paused = True
         font = pygame.font.SysFont(None, 55)
@@ -110,8 +116,8 @@ class Game:
         overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 20)) 
 
-        resume_button_img = pygame.transform.scale(pygame.image.load('data/images/resumebutton.png').convert_alpha(), (200, 100))
-        quit_button_img = pygame.transform.scale(pygame.image.load('data/images/quitbutton.png').convert_alpha(), (200, 100))
+        resume_button_img = pygame.transform.scale(pygame.image.load('data/images/pause_buttons/resumebutton.png').convert_alpha(), (200, 100))
+        quit_button_img = pygame.transform.scale(pygame.image.load('data/images/pause_buttons/quitbutton.png').convert_alpha(), (200, 100))
         resume_button_rect = resume_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
         quit_button_rect = quit_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50))
 
@@ -181,12 +187,27 @@ class Game:
             self.clock.tick(60)
         self.vid.close()
     
-    
+    def display_tutorial(self):
+        for img in self.tutorial_images:
+            displaying = True
+            while displaying:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                        displaying = False
+
+                self.screen.fill((0, 0, 0))
+                self.screen.blit(img, (0, 0))
+                pygame.display.update()
+                self.clock.tick(60)
         
     def run(self, clock):
         self.play_intro_video()  # Play the video once at the start
+        self.display_tutorial()  # Display the tutorial images
 
-        pygame.mixer.music.load('data/music.wav')
+        pygame.mixer.music.load('data/music.mp3')
         pygame.mixer.music.set_volume(0.5)
         pygame.mixer.music.play(-1)
         
@@ -321,8 +342,5 @@ class Game:
                  
             pygame.display.update()
             self.clock.tick(60)
-
-
-    
 
 Game().run(clock)

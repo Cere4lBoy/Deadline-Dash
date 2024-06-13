@@ -194,9 +194,9 @@ class Player(PhysicsEntity):
             self.game.particles.append(Particle(self.game, 'particle', self.rect().center, velocity=pvelocity, frame=random.randint(0, 7)))
                 
         if self.velocity[0] > 0:
-            self.velocity[0] = max(self.velocity[0] - 0.1, 0)
+            self.velocity[0] = max(self.velocity[0] - 0.3, 0)
         else:
-            self.velocity[0] = min(self.velocity[0] + 0.1, 0)
+            self.velocity[0] = min(self.velocity[0] + 0.3, 0)
     
     def render(self, surf, offset=(0, 0)):
         if abs(self.dashing) <= 50:
