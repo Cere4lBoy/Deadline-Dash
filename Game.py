@@ -45,6 +45,8 @@ class Game:
         self.pause_button_img = pygame.image.load('data/images/pausebutton.png').convert_alpha()
         self.pause_button_img = pygame.transform.scale(self.pause_button_img, (70, 70))
         self.pause_button_rect = self.pause_button_img.get_rect(topleft=(20, 10))
+
+        
         
         self.screen = screen
         self.display = pygame.Surface((320, 240), pygame.SRCALPHA)
@@ -53,6 +55,13 @@ class Game:
         self.clock = pygame.time.Clock()
         
         self.movement = [False, False]
+
+         # Initialize elapsed_time and timer_duration
+        self.elapsed_time = 0
+        self.timer_duration = 1800 #Example: 1800 frames = 30 seconds at 60 FPS
+
+        # Initialize the font
+        self.font = pygame.font.SysFont(None, 55)
         
         self.assets = {
             'decor': load_images('tiles/decor'),
@@ -197,6 +206,13 @@ class Game:
             self.display_2.blit(self.assets['background'], (0, 0))
             
             self.screenshake = max(0, self.screenshake - 1)
+
+            self.elapsed_time += 1
+
+            if self.elapsed_time >= self.timer_duration:
+                  self.dead = 1
+
+            self.render_timer()
             
             if not len(self.enemies):
                 self.transition += 1
@@ -321,7 +337,18 @@ class Game:
                  
             pygame.display.update()
             self.clock.tick(60)
+    
+    def render_timer(self):
+    # Convert elapsed time to seconds
+        seconds = (self.timer_duration - self.elapsed_time) // 60
 
+    # Render timer text
+        timer_text = f"Timer: {seconds} seconds"
+        text_surface = self.font.render(timer_text, True, pygame.Color('white'))
+
+    # Display the timer text at the top middle of the screen
+        text_rect = text_surface.get_rect(center=(self.screen.get_width() // 2, 30))  # Adjusted y-coordinate to 30 for visibility
+        self.screen.blit(text_surface, text_rect)
 
     
 
