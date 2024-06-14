@@ -126,10 +126,12 @@ class Game:
         overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 20)) 
 
-        resume_button_img = pygame.transform.scale(pygame.image.load('data/images/pause_buttons/resumebutton.png').convert_alpha(), (200, 100))
-        quit_button_img = pygame.transform.scale(pygame.image.load('data/images/pause_buttons/quitbutton.png').convert_alpha(), (200, 100))
-        resume_button_rect = resume_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
-        quit_button_rect = quit_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50))
+        resume_button_img = pygame.transform.scale(pygame.image.load('data/images/pause_buttons/resumebutton.png').convert_alpha(), (300, 100))
+        quit_button_img = pygame.transform.scale(pygame.image.load('data/images/pause_buttons/quitbutton.png').convert_alpha(), (300, 100))
+        credits_button_img = pygame.transform.scale(pygame.image.load('data/images/pause_buttons/creditsbutton.png').convert_alpha(), (300, 100))
+        resume_button_rect = resume_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 100))
+        quit_button_rect = quit_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 100))
+        credits_button_rect = credits_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 ))
 
         while paused:
             for event in pygame.event.get():
@@ -143,6 +145,8 @@ class Game:
                     mouse_pos = event.pos
                     if resume_button_rect.collidepoint(mouse_pos):
                         paused = False
+                    if credits_button_rect.collidepoint(mouse_pos):
+                        self.credit_screen()
                     if quit_button_rect.collidepoint(mouse_pos):
                         pygame.quit()
                         sys.exit()
@@ -151,6 +155,7 @@ class Game:
 
             # Draw buttons
             screen.blit(resume_button_img, resume_button_rect.topleft)
+            screen.blit(credits_button_img, credits_button_rect.topleft)
             screen.blit(quit_button_img, quit_button_rect.topleft)
 
             pygame.display.update()
@@ -389,6 +394,33 @@ class Game:
         # Display the timer text at the top middle of the screen
         text_rect = text_surface.get_rect(center=(self.screen.get_width() // 2, 30))  # Adjusted y-coordinate to 30 for visibility
         self.screen.blit(text_surface, text_rect)
+
+    def credit_screen(self):
+        credits = [
+            "Game Design: Iman & Nazim",
+            "Programming: Iman & Nazim",
+            "Art: Iman & Nazim",
+            "Music: Macroblank - 行方不明 ",
+            "Special Thanks: Mr. Willie",
+        ]
+        
+        font = pygame.font.SysFont(None, 55)
+        running = True
+
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    running = False  # Exit the credits screen when a key is pressed or mouse button is clicked
+
+            self.screen.fill(BLACK)
+            for i, line in enumerate(credits):
+                draw_text(line, font, WHITE, self.screen, 100, 100 + i * 60)
+            
+            pygame.display.update()
+            self.clock.tick(60)
 
         
 
