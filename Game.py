@@ -38,6 +38,25 @@ def draw_text(text, font, color, surface, x, y):
         textrect.topleft = (x, y)
         surface.blit(textobj, textrect)
 
+class Boss(Enemy):  # Assuming Enemy inherits from PhysicsEntity
+    def __init__(self, game, pos, size):
+        super().__init__(game, pos, size)
+        self.image = load_image('boss.png')  # Load a boss image
+        self.speed = 0.1  # Set boss speed
+
+    def update(self, tilemap, scroll):
+        # Simple chasing logic
+        if self.game.player.pos[0] > self.pos[0]:
+            self.pos[0] += self.speed
+        elif self.game.player.pos[0] < self.pos[0]:
+            self.pos[0] -= self.speed
+
+        if self.game.player.pos[1] > self.pos[1]:
+            self.pos[1] += self.speed
+        elif self.game.player.pos[1] < self.pos[1]:
+            self.pos[1] -= self.speed
+
+        return super().update(tilemap, scroll)
 
 class Game:
     def __init__(self):
@@ -58,7 +77,7 @@ class Game:
 
          # Initialize elapsed_time and timer_duration
         self.elapsed_time = 0
-        self.timer_duration = 10800 #Example: 1800 frames = 30 seconds at 60 FPS
+        self.timer_duration = 10800  #1800 frames = 30 seconds at 60 FPS
 
         # Initialize the font
         self.font = pygame.font.SysFont(None, 55)
@@ -103,10 +122,7 @@ class Game:
         self.player = Player(self, (50, 50), (8, 15))
         
         self.tilemap = Tilemap(self, tile_size=16)
-        
-        self.level = 0
-        self.load_level(self.level)
-        
+    
         self.screenshake = 0
 
         self.vid = Video('data/group7intro.mp4')
@@ -116,8 +132,19 @@ class Game:
         self.tutorial_images = [
             pygame.image.load('data/images/tutorial1.png').convert_alpha(),
             pygame.image.load('data/images/tutorial2.png').convert_alpha(),
-            pygame.image.load('data/images/tutorial3.png').convert_alpha()
+            pygame.image.load('data/images/tutorial3.png').convert_alpha(),
+            pygame.image.load('data/images/tutorial1.png').convert_alpha()
         ]
+
+        self.background_images = {
+            0: 'data/images/levelbackground/background0.png',
+            1: 'data/images/levelbackground/background1.png',
+            2: 'data/images/levelbackground/background2.png',
+            # Add more backgrounds for additional levels here
+        }
+
+        self.level = 0
+        self.load_level(self.level)
 
     def pause_menu(self, screen, clock):
         paused = True
@@ -180,6 +207,22 @@ class Game:
         self.scroll = [0, 0]
         self.dead = 0
         self.transition = -30
+        
+        if map_id in self.background_images:
+            self.assets['background'] = pygame.image.load(self.background_images[map_id]).convert_alpha()
+        else:
+            self.assets['background'] = pygame.image.load('data/images/background.png').convert_alpha()
+
+        if map_id == 2:
+            boss_pos = (0, 0)  # Starting position of the boss
+            self.boss = Boss(self, boss_pos, (100, 100))  # Adjust size accordingly
+            print('boss is spawned')
+        else:
+            self.boss = None
+
+        if map_id == 3:
+            self.display_image_and_wait('data/images/submit.png')  # Replace with your image path
+            self.winner_screen()  # Call the temporary winner screen
 
     def play_intro_video(self):
         self.vid.restart()  # Ensure the video starts from the beginning
@@ -218,7 +261,7 @@ class Game:
         self.display_tutorial()  # Display the tutorial images
 
         pygame.mixer.music.load('data/music.mp3')
-        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.set_volume(0.1)
         pygame.mixer.music.play(-1)
         
         self.sfx['ambience'].play(-1)
@@ -266,11 +309,15 @@ class Game:
                 enemy.render(self.display, offset=render_scroll)
                 if kill:
                     self.enemies.remove(enemy)
-            
+
+            if self.boss:
+                self.boss.update(self.tilemap, render_scroll)
+                self.boss.render(self.display, offset=render_scroll)
+
             if not self.dead:
                 self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
                 self.player.render(self.display, offset=render_scroll)
-            
+                
             # [[x, y], direction, timer]
             for projectile in self.projectiles.copy():
                 projectile[0][0] += projectile[1]
@@ -377,21 +424,64 @@ class Game:
             pygame.display.update()
             self.clock.tick(60)
 
+    def display_image_and_wait(self, image_path):
+        image = pygame.image.load(image_path).convert_alpha()
+        image = pygame.transform.scale(image, (self.screen.get_width(), self.screen.get_height()))
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_x:
+                        waiting = False
+
+            self.screen.fill((0, 0, 0))
+            self.screen.blit(image, (0, 0))
+            pygame.display.update()
+            self.clock.tick(60)
     
     def render_timer(self):
-        # Convert elapsed time to seconds
         seconds = (self.timer_duration - self.elapsed_time) // 60
-
-        # Render timer text
         timer_text = f"{seconds}"
-        text_surface = self.font.render(timer_text, True, pygame.Color('white'))
+        text_color = pygame.Color('white')
+        outline_color = pygame.Color('black')
+        outline_surface = self.font.render(timer_text, True, outline_color)
+        text_surface = self.font.render(timer_text, True, text_color)
+        text_rect = text_surface.get_rect(center=(self.screen.get_width() // 2, 30))
+        for dx, dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
+            outline_rect = text_rect.move(dx, dy)
+            self.screen.blit(outline_surface, outline_rect)
 
-        # Display the timer text at the top middle of the screen
-        text_rect = text_surface.get_rect(center=(self.screen.get_width() // 2, 30))  # Adjusted y-coordinate to 30 for visibility
         self.screen.blit(text_surface, text_rect)
 
-        
 
-    
+    def winner_screen(self):
+        font = pygame.font.SysFont(None, 100)
+        winner_text = "Winner!"
+        text_color = pygame.Color('white')
+        outline_color = pygame.Color('black')
+        text_surface = font.render(winner_text, True, text_color)
+        outline_surface = font.render(winner_text, True, outline_color)
+        text_rect = text_surface.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    pygame.quit()
+                    sys.exit()
+
+            self.screen.fill((0, 0, 0))
+            for dx, dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
+                outline_rect = text_rect.move(dx, dy)
+                self.screen.blit(outline_surface, outline_rect)
+            self.screen.blit(text_surface, text_rect)
+            pygame.display.update()
+            self.clock.tick(60)
 
 Game().run(clock)
