@@ -1,4 +1,4 @@
-# 💫 About Me:
+# 💫 GROUP 7:
 Developer of Deadline Dash<br><br>A game where you run through levels and submit the assignment<br>(a speedrun game),
 
 # Official Itch IO :
