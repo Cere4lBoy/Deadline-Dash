@@ -3,6 +3,7 @@ import sys
 import math
 import random
 import pygame
+import json
 from Scripts.utils import load_image, load_images, Animation
 from Scripts.entities import PhysicsEntity, Player, Enemy
 from Scripts.tilemap import Tilemap
@@ -146,6 +147,9 @@ class Game:
         self.level = 0
         self.load_level(self.level)
 
+        self.scores = self.load_scores()
+        self.start_time = pygame.time.get_ticks()
+
     def pause_menu(self, screen, clock):
         paused = True
         font = pygame.font.SysFont(None, 55)
@@ -156,9 +160,13 @@ class Game:
         resume_button_img = pygame.transform.scale(pygame.image.load('data/images/pause_buttons/resumebutton.png').convert_alpha(), (300, 100))
         quit_button_img = pygame.transform.scale(pygame.image.load('data/images/pause_buttons/quitbutton.png').convert_alpha(), (300, 100))
         credits_button_img = pygame.transform.scale(pygame.image.load('data/images/pause_buttons/creditsbutton.png').convert_alpha(), (300, 100))
-        resume_button_rect = resume_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 100))
-        quit_button_rect = quit_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 100))
-        credits_button_rect = credits_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 ))
+        scores_button_img = pygame.transform.scale(pygame.image.load('data/images/pause_buttons/scoresbutton.png').convert_alpha(), (300, 100))
+        
+        resume_button_rect = resume_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 150))
+        quit_button_rect = quit_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
+        scores_button_rect = scores_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50))
+        credits_button_rect = credits_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 150 ))
+ 
 
         while paused:
             for event in pygame.event.get():
@@ -172,6 +180,8 @@ class Game:
                     mouse_pos = event.pos
                     if resume_button_rect.collidepoint(mouse_pos):
                         paused = False
+                    if scores_button_rect.collidepoint(mouse_pos):
+                        self.display_scores()
                     if credits_button_rect.collidepoint(mouse_pos):
                         self.credit_screen()
                     if quit_button_rect.collidepoint(mouse_pos):
@@ -183,6 +193,7 @@ class Game:
             # Draw buttons
             screen.blit(resume_button_img, resume_button_rect.topleft)
             screen.blit(credits_button_img, credits_button_rect.topleft)
+            screen.blit(scores_button_img, scores_button_rect.topleft)
             screen.blit(quit_button_img, quit_button_rect.topleft)
 
             pygame.display.update()
@@ -228,6 +239,20 @@ class Game:
         if map_id == 3:
             self.display_image_and_wait('data/images/submit.png')  # Replace with your image path
             self.winner_screen()  # Call the temporary winner screen
+
+        self.start_time = pygame.time.get_ticks()
+    
+    #Score System
+    def load_scores(self):
+        try:
+             with open('data/scores.json', 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+           return []
+
+    def save_scores(self):
+         with open('data/scores.json', 'w') as f:
+           json.dump(self.scores, f)
 
     def play_intro_video(self):
         self.vid.restart()  # Ensure the video starts from the beginning
@@ -480,14 +505,22 @@ class Game:
                 if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     pygame.quit()
                     sys.exit()
+                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    running = False
 
             self.screen.fill((0, 0, 0))
             for dx, dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
                 outline_rect = text_rect.move(dx, dy)
                 self.screen.blit(outline_surface, outline_rect)
             self.screen.blit(text_surface, text_rect)
+
+            for i, score in enumerate(self.scores):
+                score_text = score_font.render(f"{i + 1}. {score:.2f} seconds", True, text_color)
+                self.screen.blit(score_text, (self.screen.get_width() // 2 - score_text.get_width() // 2, 400 + i * 60))
+
             pygame.display.update()
             self.clock.tick(60)
+
     def credit_screen(self):
         credits = [
             "Game Design: Iman & Nazim",
@@ -512,6 +545,34 @@ class Game:
             for i, line in enumerate(credits):
                 draw_text(line, font, WHITE, self.screen, 100, 100 + i * 60)
             
+            pygame.display.update()
+            self.clock.tick(60)
+
+    def update_scores(self):
+        end_time = pygame.time.get_ticks()
+        completion_time = (end_time - self.start_time) / 1000  # Time in seconds
+        self.scores.append(completion_time)
+        self.scores = sorted(self.scores)[:10]  # Keep top 10 scores
+        self.save_scores()
+
+    def display_scores(self):
+        font = pygame.font.SysFont(None, 55)
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    running = False  # Exit the scoreboard when a key is pressed or mouse button is clicked
+
+            self.screen.fill(BLACK)
+            draw_text("Top Scores", font, WHITE, self.screen, 100, 50)
+
+            for i, score in enumerate(self.scores):
+                score_text = font.render(f"{i + 1}. {score:.2f} seconds", True, WHITE)
+                self.screen.blit(score_text, (100, 100 + i * 60))
+
             pygame.display.update()
             self.clock.tick(60)
 
