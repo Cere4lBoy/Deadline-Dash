@@ -39,26 +39,6 @@ def draw_text(text, font, color, surface, x, y):
         textrect.topleft = (x, y)
         surface.blit(textobj, textrect)
 
-class Boss(Enemy):  # Assuming Enemy inherits from PhysicsEntity
-    def __init__(self, game, pos, size):
-        super().__init__(game, pos, size)
-        self.image = load_image('boss.png')  # Load a boss image
-        self.speed = 0.1  # Set boss speed
-
-    def update(self, tilemap, scroll):
-        # Simple chasing logic
-        if self.game.player.pos[0] > self.pos[0]:
-            self.pos[0] += self.speed
-        elif self.game.player.pos[0] < self.pos[0]:
-            self.pos[0] -= self.speed
-
-        if self.game.player.pos[1] > self.pos[1]:
-            self.pos[1] += self.speed
-        elif self.game.player.pos[1] < self.pos[1]:
-            self.pos[1] -= self.speed
-
-        return super().update(tilemap, scroll)
-
 class Game:
     def __init__(self):
         self.pause_button_img = pygame.image.load('data/images/pause_buttons/pausebutton.png').convert_alpha()
@@ -76,11 +56,15 @@ class Game:
         
         self.movement = [False, False] 
 
-        
+        pygame.joystick.init()
+        self.joystick_count = pygame.joystick.get_count()
+        if self.joystick_count > 0:
+            self.joystick = pygame.joystick.Joystick(0)
+            self.joystick.init()
 
          # Initialize elapsed_time and timer_duration
         self.elapsed_time = 0
-        self.timer_duration = 10800  #1800 frames = 30 seconds at 60 FPS
+        self.timer_duration = 10800 #1800 frames = 30 seconds at 60 FPS
 
         # Initialize the font
         self.font = pygame.font.SysFont(None, 55)
@@ -136,7 +120,7 @@ class Game:
             pygame.image.load('data/images/tutorial1.png').convert_alpha(),
             pygame.image.load('data/images/tutorial2.png').convert_alpha(),
             pygame.image.load('data/images/tutorial3.png').convert_alpha(),
-            pygame.image.load('data/images/tutorial1.png').convert_alpha()
+            pygame.image.load('data/images/tutorial4.png').convert_alpha()
         ]
 
         self.background_images = {
@@ -206,11 +190,11 @@ class Game:
         
     def load_level(self, map_id):
         self.tilemap.load('data/maps/' + str(map_id) + '.json')
-        
+
         self.leaf_spawners = []
         for tree in self.tilemap.extract([('large_decor', 2)], keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + tree['pos'][0], 4 + tree['pos'][1], 23, 13))
-            
+
         self.enemies = []
         for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
             if spawner['variant'] == 0:
@@ -219,31 +203,24 @@ class Game:
             else:
                 enemy_y = spawner['pos'][1] - 500
                 self.enemies.append(Enemy(self, (spawner['pos'][0], enemy_y), (8, 15)))
-            
+
         self.projectiles = []
         self.particles = []
         self.sparks = []
-        
+
         self.scroll = [0, 0]
         self.dead = 0
         self.transition = -30
-        
+
         if map_id in self.background_images:
             self.assets['background'] = pygame.image.load(self.background_images[map_id]).convert_alpha()
         else:
             self.assets['background'] = pygame.image.load('data/images/background.png').convert_alpha()
 
-        if map_id == 2:
-            boss_pos = (0, 0)
-            self.boss = Boss(self, boss_pos, (100, 100))
-            print('boss is spawned')
-        else:
-            self.boss = None
-
         if map_id == 3:
             self.display_image_and_wait('data/images/submit.png')
             self.update_scores()
-            self.show_scoreboard()  # Show scoreboard before winner screen
+            self.display_scores()  # Show scoreboard before winner screen
             self.winner_screen()  # Call the winner screen
 
         self.start_time = pygame.time.get_ticks()
@@ -347,9 +324,6 @@ class Game:
                 if kill:
                     self.enemies.remove(enemy)
 
-            if self.boss:
-                self.boss.update(self.tilemap, render_scroll)
-                self.boss.render(self.display, offset=render_scroll)
 
             if not self.dead:
                 self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
@@ -423,6 +397,34 @@ class Game:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if self.pause_button_rect.collidepoint(event.pos):
                       self.pause_menu(screen, clock)
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.pause_menu(screen, clock)
+                if event.type == pygame.JOYBUTTONDOWN:
+                    if event.button == 0:  
+                        self.player.jump()
+                    if event.button == 2:  
+                        self.player.dash()
+                    if event.button == 7:  
+                        self.pause_menu(screen, clock)
+                if event.type == pygame.JOYHATMOTION:
+                    hat_x, hat_y = event.value
+                    if hat_x < 0:  
+                        self.movement[0] = True
+                        self.movement[1] = False
+                    elif hat_x > 0: 
+                        self.movement[0] = False
+                        self.movement[1] = True
+                    else:  
+                        self.movement[0] = False
+                        self.movement[1] = False
+                    
+                    if hat_y > 0:  
+                        pass  
+                    elif hat_y < 0:  
+                        pass  
+                    else:  
+                        pass  
 
             if self.transition:
              transition_surf = pygame.Surface(self.display.get_size())
@@ -481,56 +483,47 @@ class Game:
     
     def render_timer(self):
         seconds = (self.timer_duration - self.elapsed_time) // 60
-        timer_text = f"{seconds}"
+        minutes = seconds // 60
+        seconds %= 60
+        timer_text = f"{minutes:02d}:{seconds:02d}"
+        stopwatch_text = f"{self.elapsed_time // 60:02d}:{self.elapsed_time % 60:02d}"
         text_color = pygame.Color('white')
         outline_color = pygame.Color('black')
-        outline_surface = self.font.render(timer_text, True, outline_color)
-        text_surface = self.font.render(timer_text, True, text_color)
-        text_rect = text_surface.get_rect(center=(self.screen.get_width() // 2, 30))
+        font = self.font
+
+        # Render timer text
+        outline_surface = font.render(timer_text, True, outline_color)
+        text_surface = font.render(timer_text, True, text_color)
+        text_rect = text_surface.get_rect(center=(self.screen.get_width() // 2 - 150, 30))
         for dx, dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
             outline_rect = text_rect.move(dx, dy)
             self.screen.blit(outline_surface, outline_rect)
+        self.screen.blit(text_surface, text_rect)
 
+        # Render stopwatch text
+        outline_surface = font.render(stopwatch_text, True, outline_color)
+        text_surface = font.render(stopwatch_text, True, text_color)
+        text_rect = text_surface.get_rect(center=(self.screen.get_width() // 2 + 170, 30))
+        for dx, dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
+            outline_rect = text_rect.move(dx, dy)
+            self.screen.blit(outline_surface, outline_rect)
         self.screen.blit(text_surface, text_rect)
 
 
     def winner_screen(self):
         font = pygame.font.SysFont(None, 100)
-        winner_text = "Winner!"
+        winner_text = "Special Thanks To Sir Willie (The boss) !"
         text_color = pygame.Color('white')
         outline_color = pygame.Color('black')
         text_surface = font.render(winner_text, True, text_color)
         outline_surface = font.render(winner_text, True, outline_color)
         text_rect = text_surface.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
 
+        video = Video('data/ending.mp4')
+        video.set_size((self.screen.get_width(), self.screen.get_height()))
+        video.restart()
 
-        running = True
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                    pygame.quit()
-                    sys.exit()
-
-            self.screen.fill((0, 0, 0))
-
-            for dx, dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
-                outline_rect = text_rect.move(dx, dy)
-                self.screen.blit(outline_surface, outline_rect)
-            self.screen.blit(text_surface, text_rect)
-
-            pygame.display.update()
-            self.clock.tick(60)
-
-    def show_scoreboard(self):
-        font = pygame.font.SysFont(None, 55)
-        score_font = pygame.font.SysFont(None, 55)
-        text_color = pygame.Color('white')
-        outline_color = pygame.Color('black')
-
-        max_scores_to_display = 20
+        pygame.mixer.music.stop()
 
         running = True
         while running:
@@ -543,10 +536,35 @@ class Game:
 
             self.screen.fill((0, 0, 0))
 
-            # Display scores
-            for i, score in enumerate(self.scores):
-                score_text = score_font.render(f"{i + 1}. {score:.2f} seconds", True, text_color)
-                self.screen.blit(score_text, (self.screen.get_width() // 2 - score_text.get_width() // 2, 100 + i * 60))
+            if video.active:
+                video.draw(self.screen, (0, 0))
+                pygame.display.update()
+                self.clock.tick(60)
+            else:
+                self.screen.blit(text_surface, text_rect)
+                pygame.display.update()
+                self.clock.tick(60)
+                running = False
+
+        video.close()
+        thank_you_text = "Thank you Sir Willie"
+        thank_you_surface = font.render(thank_you_text, True, text_color)
+        thank_you_rect = thank_you_surface.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2 + 100))
+
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    running = False
+                    pygame.quit()
+                    sys.exit()
+
+            self.screen.fill((0, 0, 0))
+
+            self.screen.blit(thank_you_surface, thank_you_rect)
 
             pygame.display.update()
             self.clock.tick(60)
@@ -557,11 +575,13 @@ class Game:
 
     def credit_screen(self):
         credits = [
+            "Group 7",
+            "Leader : Iman Thaqif",
             "Game Design: Iman & Nazim",
             "Programming: Iman & Nazim",
             "Art: Iman & Nazim",
-            "Music: Macroblank - YT ",
-            "Special Thanks: Mr. Willie",
+            "Music: Macroblank(YouTube) ",
+            "Pygame Tutorial : 'DaFluffyPotato'(YouTube)",
         ]
         
         font = pygame.font.SysFont(None, 55)
@@ -573,7 +593,7 @@ class Game:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                    running = False  # Exit the credits screen when a key is pressed or mouse button is clicked
+                    running = False  
 
             self.screen.fill(BLACK)
             for i, line in enumerate(credits):
@@ -591,24 +611,28 @@ class Game:
 
 
     def display_scores(self):
-            font = pygame.font.SysFont(None, 55)
-            running = True
-            while running:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit()
-                    if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                        running = False  # Exit the scoreboard when a key is pressed or mouse button is clicked
+        font = pygame.font.SysFont(None, 55)
+        background_image = pygame.image.load('data/images/leaderboard.png').convert_alpha()
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    running = False  
 
-                self.screen.fill(BLACK)
-                draw_text("Top Scores", font, WHITE, self.screen, 100, 50)
+            self.screen.fill(BLACK)
+            self.screen.blit(background_image, (0, 0))  
 
-                for i, score in enumerate(self.scores):
-                    score_text = font.render(f"{i + 1}. {score:.2f} seconds", True, WHITE)
-                    self.screen.blit(score_text, (100, 100 + i * 60))
+            
+            draw_text("Fastest Time", font, WHITE, self.screen, 200, 250)  
 
-                pygame.display.update()
-                self.clock.tick(60)
+            for i, score in enumerate(self.scores):
+                score_text = font.render(f"{i + 1}. {score:.2f} seconds", True, WHITE)
+                self.screen.blit(score_text, (200, 300 + i * 60))  
+
+            pygame.display.update()
+            self.clock.tick(60)
     
 Game().run(clock)
