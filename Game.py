@@ -74,7 +74,9 @@ class Game:
 
         self.clock = pygame.time.Clock()
         
-        self.movement = [False, False]
+        self.movement = [False, False] 
+
+        
 
          # Initialize elapsed_time and timer_duration
         self.elapsed_time = 0
@@ -147,6 +149,9 @@ class Game:
         self.level = 0
         self.load_level(self.level)
 
+        self.start_time = pygame.time.get_ticks()
+        self.total_start_time = self.start_time
+
         self.scores = self.load_scores()
         self.start_time = pygame.time.get_ticks()
 
@@ -163,9 +168,9 @@ class Game:
         scores_button_img = pygame.transform.scale(pygame.image.load('data/images/pause_buttons/scoresbutton.png').convert_alpha(), (300, 100))
         
         resume_button_rect = resume_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 150))
-        quit_button_rect = quit_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
-        scores_button_rect = scores_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50))
-        credits_button_rect = credits_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 150 ))
+        quit_button_rect = quit_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 150))
+        scores_button_rect = scores_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
+        credits_button_rect = credits_button_img.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50 ))
  
 
         while paused:
@@ -212,8 +217,7 @@ class Game:
                 self.player.pos = spawner['pos']
                 self.player.air_time = 3
             else:
-                # Adjust the y-coordinate to ensure enemies spawn on top of the ground
-                enemy_y = spawner['pos'][1] - 500  # Adjust this value according to your enemy's height
+                enemy_y = spawner['pos'][1] - 500
                 self.enemies.append(Enemy(self, (spawner['pos'][0], enemy_y), (8, 15)))
             
         self.projectiles = []
@@ -230,29 +234,32 @@ class Game:
             self.assets['background'] = pygame.image.load('data/images/background.png').convert_alpha()
 
         if map_id == 2:
-            boss_pos = (0, 0)  # Starting position of the boss
-            self.boss = Boss(self, boss_pos, (100, 100))  # Adjust size accordingly
+            boss_pos = (0, 0)
+            self.boss = Boss(self, boss_pos, (100, 100))
             print('boss is spawned')
         else:
             self.boss = None
 
         if map_id == 3:
-            self.display_image_and_wait('data/images/submit.png')  # Replace with your image path
-            self.winner_screen()  # Call the temporary winner screen
+            self.display_image_and_wait('data/images/submit.png')
+            self.update_scores()
+            self.show_scoreboard()  # Show scoreboard before winner screen
+            self.winner_screen()  # Call the winner screen
 
         self.start_time = pygame.time.get_ticks()
-    
+
     #Score System
     def load_scores(self):
         try:
-             with open('data/scores.json', 'r') as f:
+            with open('data/scores.json', 'r') as f:
                 return json.load(f)
         except FileNotFoundError:
-           return []
+            return []
 
     def save_scores(self):
-         with open('data/scores.json', 'w') as f:
-           json.dump(self.scores, f)
+        with open('data/scores.json', 'w') as f:
+            json.dump(self.scores, f)
+
 
     def play_intro_video(self):
         self.vid.restart()  # Ensure the video starts from the beginning
@@ -496,6 +503,7 @@ class Game:
         outline_surface = font.render(winner_text, True, outline_color)
         text_rect = text_surface.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
 
+
         running = True
         while running:
             for event in pygame.event.get():
@@ -505,28 +513,54 @@ class Game:
                 if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                    running = False
 
             self.screen.fill((0, 0, 0))
+
             for dx, dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
                 outline_rect = text_rect.move(dx, dy)
                 self.screen.blit(outline_surface, outline_rect)
             self.screen.blit(text_surface, text_rect)
 
+            pygame.display.update()
+            self.clock.tick(60)
+
+    def show_scoreboard(self):
+        font = pygame.font.SysFont(None, 55)
+        score_font = pygame.font.SysFont(None, 55)
+        text_color = pygame.Color('white')
+        outline_color = pygame.Color('black')
+
+        max_scores_to_display = 20
+
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    running = False
+
+            self.screen.fill((0, 0, 0))
+
+            # Display scores
             for i, score in enumerate(self.scores):
                 score_text = score_font.render(f"{i + 1}. {score:.2f} seconds", True, text_color)
-                self.screen.blit(score_text, (self.screen.get_width() // 2 - score_text.get_width() // 2, 400 + i * 60))
+                self.screen.blit(score_text, (self.screen.get_width() // 2 - score_text.get_width() // 2, 100 + i * 60))
 
             pygame.display.update()
             self.clock.tick(60)
+
+    def reset_scores(self):
+        self.scores = []
+        self.save_scores()
 
     def credit_screen(self):
         credits = [
             "Game Design: Iman & Nazim",
             "Programming: Iman & Nazim",
             "Art: Iman & Nazim",
-            "Music: Macroblank - 行方不明 ",
+            "Music: Macroblank - YT ",
             "Special Thanks: Mr. Willie",
         ]
         
@@ -550,34 +584,31 @@ class Game:
 
     def update_scores(self):
         end_time = pygame.time.get_ticks()
-        completion_time = (end_time - self.start_time) / 1000  # Time in seconds
-        self.scores.append(completion_time)
+        total_elapsed_time = (end_time - self.total_start_time) / 1000  # Total time in seconds
+        self.scores.append(total_elapsed_time)
         self.scores = sorted(self.scores)[:10]  # Keep top 10 scores
         self.save_scores()
 
+
     def display_scores(self):
-        font = pygame.font.SysFont(None, 55)
-        running = True
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                    running = False  # Exit the scoreboard when a key is pressed or mouse button is clicked
+            font = pygame.font.SysFont(None, 55)
+            running = True
+            while running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                        running = False  # Exit the scoreboard when a key is pressed or mouse button is clicked
 
-            self.screen.fill(BLACK)
-            draw_text("Top Scores", font, WHITE, self.screen, 100, 50)
+                self.screen.fill(BLACK)
+                draw_text("Top Scores", font, WHITE, self.screen, 100, 50)
 
-            for i, score in enumerate(self.scores):
-                score_text = font.render(f"{i + 1}. {score:.2f} seconds", True, WHITE)
-                self.screen.blit(score_text, (100, 100 + i * 60))
+                for i, score in enumerate(self.scores):
+                    score_text = font.render(f"{i + 1}. {score:.2f} seconds", True, WHITE)
+                    self.screen.blit(score_text, (100, 100 + i * 60))
 
-            pygame.display.update()
-            self.clock.tick(60)
-
-        
-
+                pygame.display.update()
+                self.clock.tick(60)
     
-
 Game().run(clock)
