@@ -12,6 +12,10 @@ from Scripts.particle import Particle
 from Scripts.spark import Spark
 from Scripts.pyvidplayer import Video
 
+#Sorry for the 600 lines of code
+#Provided some comments to briefly shows whats the code for
+#Thankyou sir
+
 # Pause menu assets
 WHITE = (255, 255, 255, 128)
 BLACK = (0, 0, 0)
@@ -29,6 +33,8 @@ screen = pygame.display.set_mode((1366, 768))
 resume_button_img = pygame.image.load('data/images/pause_buttons/resumebutton.png').convert_alpha()
 quit_button_img = pygame.image.load('data/images/pause_buttons/quitbutton.png').convert_alpha()
 clock = pygame.time.Clock()
+pygame_icon = pygame.image.load('data/gameicon.png')
+pygame.display.set_icon(pygame_icon)
 
 resume_button_img = pygame.transform.scale(resume_button_img, (200, 100))
 quit_button_img = pygame.transform.scale(quit_button_img, (200, 100))
@@ -56,19 +62,21 @@ class Game:
         
         self.movement = [False, False] 
 
+        #Game Joystick
         pygame.joystick.init()
         self.joystick_count = pygame.joystick.get_count()
         if self.joystick_count > 0:
             self.joystick = pygame.joystick.Joystick(0)
             self.joystick.init()
 
-         # Initialize elapsed_time and timer_duration
+
         self.elapsed_time = 0
         self.timer_duration = 10800 #1800 frames = 30 seconds at 60 FPS
 
-        # Initialize the font
+
         self.font = pygame.font.SysFont(None, 55)
         
+        #Load All Assets
         self.assets = {
             'decor': load_images('tiles/decor'),
             'grass': load_images('tiles/grass'),
@@ -90,6 +98,7 @@ class Game:
             'projectile': load_image('projectile.png'),
         }
         
+        #load all sounds
         self.sfx = {
             'jump': pygame.mixer.Sound('data/sfx/jump.wav'),
             'dash': pygame.mixer.Sound('data/sfx/dash.wav'),
@@ -98,6 +107,7 @@ class Game:
             'ambience': pygame.mixer.Sound('data/sfx/ambience.wav'),
         }
         
+        #Set volume for all sounds
         self.sfx['ambience'].set_volume(0.2)
         self.sfx['shoot'].set_volume(0.4)
         self.sfx['hit'].set_volume(0.8)
@@ -123,11 +133,11 @@ class Game:
             pygame.image.load('data/images/tutorial4.png').convert_alpha()
         ]
 
+        #background image loading for all levels
         self.background_images = {
             0: 'data/images/levelbackground/background0.png',
             1: 'data/images/levelbackground/background1.png',
             2: 'data/images/levelbackground/background2.png',
-            # Add more backgrounds for additional levels here
         }
 
         self.level = 0
@@ -139,6 +149,8 @@ class Game:
         self.scores = self.load_scores()
         self.start_time = pygame.time.get_ticks()
 
+
+    # Pause Menu
     def pause_menu(self, screen, clock):
         paused = True
         font = pygame.font.SysFont(None, 55)
@@ -188,6 +200,8 @@ class Game:
             pygame.display.update()
             clock.tick(60)
         
+
+    # Loading the levels
     def load_level(self, map_id):
         self.tilemap.load('data/maps/' + str(map_id) + '.json')
 
@@ -217,11 +231,12 @@ class Game:
         else:
             self.assets['background'] = pygame.image.load('data/images/background.png').convert_alpha()
 
+        #Conditions when the levels is finished
         if map_id == 3:
             self.display_image_and_wait('data/images/submit.png')
             self.update_scores()
-            self.display_scores()  # Show scoreboard before winner screen
-            self.winner_screen()  # Call the winner screen
+            self.display_scores()
+            self.winner_screen()  
 
         self.start_time = pygame.time.get_ticks()
 
@@ -237,9 +252,9 @@ class Game:
         with open('data/scores.json', 'w') as f:
             json.dump(self.scores, f)
 
-
+    #Super duper COOL intro video
     def play_intro_video(self):
-        self.vid.restart()  # Ensure the video starts from the beginning
+        self.vid.restart()
         while self.vid.active:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -254,6 +269,7 @@ class Game:
             self.clock.tick(60)
         self.vid.close()
     
+    #display the tutorials for movements, attack and stuff
     def display_tutorial(self):
         for img in self.tutorial_images:
             displaying = True
@@ -270,6 +286,7 @@ class Game:
                 pygame.display.update()
                 self.clock.tick(60)
         
+    #Run 
     def run(self, clock):
         self.play_intro_video()  # Play the video once at the start
         self.display_tutorial()  # Display the tutorial images
@@ -445,6 +462,7 @@ class Game:
             pygame.display.update()
             self.clock.tick(60)
 
+    # Game over Function
     def game_over(self):
         font = pygame.font.SysFont(None, 100)
         game_over_rect = self.game_over_img.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
