@@ -58,9 +58,17 @@ class Game:
         self.display = pygame.Surface((320, 240), pygame.SRCALPHA)
         self.display_2 = pygame.Surface((320, 240))
 
+        self.pixelatedfont = pygame.font.Font('data/fonts/pixelated.ttf', 40)
+
         self.clock = pygame.time.Clock()
         
         self.movement = [False, False] 
+
+        #Willie
+        self.willie_start_x = -70
+        self.willie_speed = 0.5
+        self.willie_fixed_y = 10
+
 
         #Game Joystick
         pygame.joystick.init()
@@ -71,12 +79,11 @@ class Game:
 
 
         self.elapsed_time = 0
-        self.timer_duration = 10800 #1800 frames = 30 seconds at 60 FPS
+        self.timer_duration = 7200 #1800 frames = 30 seconds at 60 FPS
 
 
-        self.font = pygame.font.SysFont(None, 55)
         
-        #Load All Assets
+
         self.assets = {
             'decor': load_images('tiles/decor'),
             'grass': load_images('tiles/grass'),
@@ -142,7 +149,17 @@ class Game:
 
         self.level = 0
         self.load_level(self.level)
+        
+        self.is_jumping = False
 
+        #all willie related content
+        self.willie_face = pygame.image.load('data/willies/willie.png').convert_alpha()
+        self.willie_face = pygame.transform.scale(self.willie_face, (self.willie_face.get_width(), 170))
+        self.willie_jump_face = pygame.image.load('data/willies/williejump.png').convert_alpha()
+        self.willie_jump_face = pygame.transform.scale(self.willie_jump_face, (self.willie_jump_face.get_width(), 170))
+        self.reset_willie()
+        self.prev_willie_y = self.willie_fixed_y
+        
         self.start_time = pygame.time.get_ticks()
         self.total_start_time = self.start_time
 
@@ -153,7 +170,6 @@ class Game:
     # Pause Menu
     def pause_menu(self, screen, clock):
         paused = True
-        font = pygame.font.SysFont(None, 55)
 
         overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 20)) 
@@ -231,12 +247,17 @@ class Game:
         else:
             self.assets['background'] = pygame.image.load('data/images/background.png').convert_alpha()
 
+        if map_id == 2:
+            self.willie_speed = 0.6
+
         #Conditions when the levels is finished
         if map_id == 3:
             self.display_image_and_wait('data/images/submit.png')
             self.update_scores()
             self.display_scores()
             self.winner_screen()  
+
+        self.reset_willie()
 
         self.start_time = pygame.time.get_ticks()
 
@@ -268,6 +289,10 @@ class Game:
             pygame.display.update()
             self.clock.tick(60)
         self.vid.close()
+
+    def reset_willie(self):
+        self.willie_x = self.willie_start_x
+        self.willie_fixed_y = 0 
     
     #display the tutorials for movements, attack and stuff
     def display_tutorial(self):
@@ -302,7 +327,7 @@ class Game:
             self.display_2.blit(self.assets['background'], (0, 0))
             
             self.screenshake = max(0, self.screenshake - 1)
-
+            self.willie_x += self.willie_speed
             self.elapsed_time += 1
 
             if not len(self.enemies):
@@ -321,7 +346,7 @@ class Game:
                     self.load_level(self.level)
             
             self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 30
-            self.scroll[1] = (self.player.rect().centery - self.display.get_height() / 2) - 40  # Adjust this value to move the camera higher up
+            self.scroll[1] = (self.player.rect().centery - self.display.get_height() / 2) - 40
             
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
             
@@ -346,7 +371,6 @@ class Game:
                 self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
                 self.player.render(self.display, offset=render_scroll)
                 
-            # [[x, y], direction, timer]
             for projectile in self.projectiles.copy():
                 projectile[0][0] += projectile[1]
                 projectile[2] += 1
@@ -389,71 +413,94 @@ class Game:
                 if kill:
                     self.particles.remove(particle)
             
+            self.screen.fill((0, 0, 0))
+
+            #willie logic
+            willie_render_x = self.willie_x - 70
+            self.willie_x += self.willie_speed
+            self.prev_player_y = self.player.pos[1]
+
+            if self.willie_x >= self.player.rect().centerx:
+                self.dead = True
+                self.load_level(self.level)
+
+
+            if self.is_jumping:
+                self.display.blit(self.willie_jump_face, (willie_render_x - self.scroll[0], self.willie_fixed_y))
+            else:
+                self.display.blit(self.willie_face, (willie_render_x - self.scroll[0], self.willie_fixed_y))
+
+            
+
+
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                   pygame.quit()
-                   sys.exit()
-                if event.type == pygame.KEYDOWN:
-                   if event.key == pygame.K_ESCAPE:
-                      self.pause_menu(self.screen, self.clock)
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
-                        self.movement[0] = True
-                    if event.key == pygame.K_RIGHT:
-                       self.movement[1] = True
-                    if event.key == pygame.K_UP:
-                      if self.player.jump():
-                         self.sfx['jump'].play()
-                    if event.key == pygame.K_x:
-                        self.player.dash()
-                if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_LEFT:
-                       self.movement[0] = False
-                    if event.key == pygame.K_RIGHT:
-                       self.movement[1] = False
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if self.pause_button_rect.collidepoint(event.pos):
-                      self.pause_menu(screen, clock)
-                if event.type == pygame.KEYDOWN:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        self.pause_menu(screen, clock)
-                if event.type == pygame.JOYBUTTONDOWN:
-                    if event.button == 0:  
-                        self.player.jump()
-                    if event.button == 2:  
+                        self.pause_menu(self.screen, self.clock)
+                    elif event.key == pygame.K_LEFT:
+                        self.movement[0] = True
+                    elif event.key == pygame.K_RIGHT:
+                        self.movement[1] = True
+                    elif event.key == pygame.K_UP:
+                        if self.player.jump():
+                            self.sfx['jump'].play()
+                            self.is_jumping = True
+                    elif event.key == pygame.K_x:
                         self.player.dash()
-                    if event.button == 7:  
-                        self.pause_menu(screen, clock)
-                if event.type == pygame.JOYHATMOTION:
+                elif event.type == pygame.KEYUP:
+                    if event.key == pygame.K_LEFT:
+                        self.movement[0] = False
+                    elif event.key == pygame.K_RIGHT:
+                        self.movement[1] = False
+                    elif event.key == pygame.K_UP:
+                        self.is_jumping = False
+
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.pause_button_rect.collidepoint(event.pos):
+                        self.pause_menu(self.screen, self.clock)
+                        
+                elif event.type == pygame.JOYBUTTONDOWN:
+                    if event.button == 0:
+                        self.player.jump()
+                        self.sfx['jump'].play()
+                        self.is_jumping = True
+                    elif event.button == 2:
+                        self.player.dash()
+                    elif event.button == 7:
+                        self.pause_menu(self.screen, self.clock)
+
+                elif event.type == pygame.JOYBUTTONUP:
+                    if event.button == 0:
+                        self.is_jumping = False  # Set is_jumping to False when jump button released
+
+                elif event.type == pygame.JOYHATMOTION:
                     hat_x, hat_y = event.value
-                    if hat_x < 0:  
+                    if hat_x < 0:
                         self.movement[0] = True
                         self.movement[1] = False
-                    elif hat_x > 0: 
+                    elif hat_x > 0:
                         self.movement[0] = False
                         self.movement[1] = True
-                    else:  
+                    else:
                         self.movement[0] = False
                         self.movement[1] = False
-                    
-                    if hat_y > 0:  
-                        pass  
-                    elif hat_y < 0:  
-                        pass  
-                    else:  
-                        pass  
+
 
             if self.transition:
-             transition_surf = pygame.Surface(self.display.get_size())
-             pygame.draw.circle(transition_surf, (255, 255, 255), (self.display.get_width() // 2, self.display.get_height() // 2), (30 - abs(self.transition)) * 8)
-             transition_surf.set_colorkey((255, 255, 255))
-            self.display.blit(transition_surf, (0, 0))
+                transition_surf = pygame.Surface(self.display.get_size())
+                pygame.draw.circle(transition_surf, (255, 255, 255), (self.display.get_width() // 2, self.display.get_height() // 2), (30 - abs(self.transition)) * 8)
+                transition_surf.set_colorkey((255, 255, 255))
+                self.display.blit(transition_surf, (0, 0))
 
             self.display_2.blit(self.display, (0, 0))
   
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2, random.random() * self.screenshake - self.screenshake / 2)
             self.screen.blit(pygame.transform.scale(self.display_2, self.screen.get_size()), screenshake_offset)
-            screen.blit(self.pause_button_img, self.pause_button_rect.topleft)
+            self.screen.blit(self.pause_button_img, self.pause_button_rect.topleft)
             
             if self.elapsed_time >= self.timer_duration:
                 self.game_over()
@@ -464,7 +511,7 @@ class Game:
 
     # Game over Function
     def game_over(self):
-        font = pygame.font.SysFont(None, 100)
+        font = self.pixelatedfont
         game_over_rect = self.game_over_img.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
 
         while True:
@@ -507,7 +554,7 @@ class Game:
         stopwatch_text = f"{self.elapsed_time // 60:02d}:{self.elapsed_time % 60:02d}"
         text_color = pygame.Color('white')
         outline_color = pygame.Color('black')
-        font = self.font
+        font = self.pixelatedfont
 
         # Render timer text
         outline_surface = font.render(timer_text, True, outline_color)
@@ -529,7 +576,7 @@ class Game:
 
 
     def winner_screen(self):
-        font = pygame.font.SysFont(None, 100)
+        font = self.pixelatedfont
         winner_text = "Special Thanks To Sir Willie (The boss) !"
         text_color = pygame.Color('white')
         outline_color = pygame.Color('black')
@@ -602,7 +649,7 @@ class Game:
             "Pygame Tutorial : 'DaFluffyPotato'(YouTube)",
         ]
         
-        font = pygame.font.SysFont(None, 55)
+        font = self.pixelatedfont
         running = True
 
         while running:
@@ -629,7 +676,7 @@ class Game:
 
 
     def display_scores(self):
-        font = pygame.font.SysFont(None, 55)
+        font = self.pixelatedfont
         background_image = pygame.image.load('data/images/leaderboard.png').convert_alpha()
         running = True
         while running:
